@@ -59,51 +59,13 @@ pn.extension(raw_css=[
     """
 ])
 
-# UI State
-panels = []
-
+# UI State is now handled directly by the chat_area widget
 def extract_json(text):
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if match:
         try: return json.loads(match.group())
         except: return None
     return None
-
-def collect_messages(_):
-    prompt = inp.value.strip()
-    if not prompt: return pn.Column(*panels)
-    inp.value = ""
-    
-    print(f"DEBUG: Processing message: {prompt}")
-
-    # 1. Check FAQ
-    faq_answer = get_faq_answer(prompt)
-    if faq_answer:
-        print("DEBUG: FAQ match found")
-        reply = faq_answer
-    else:
-        # 2. Call AI
-        print("DEBUG: Calling Gemini AI...")
-        try:
-            reply = gemini_chat(prompt)
-            print("DEBUG: AI replied successfully")
-        except Exception as e:
-            reply = f"🚨 **AI Engine Error:** {str(e)}"
-            print(f"DEBUG: AI Error: {e}")
-
-    # Check for JSON confirmation
-    booking_data = extract_json(reply)
-    if booking_data and booking_data.get("status") == "confirmed":
-        save_appointment(booking_data.get("data", {}))
-        display_reply = re.sub(r'\{.*\}', '✅ **Appointment confirmed and added to our system!**', reply, flags=re.DOTALL)
-    else:
-        display_reply = reply
-
-    # Add messages to UI
-    panels.append(pn.Row(pn.pane.Markdown(f"{prompt}", css_classes=['user-msg']), align="end"))
-    panels.append(pn.Row(pn.pane.Markdown(f"{display_reply}", css_classes=['bot-msg'])))
-
-    return pn.Column(*panels, scroll=True, height=500)
 
 # Widgets
 inp = pn.widgets.TextInput(placeholder="Ask about booking, hours, or services...", disabled=True, sizing_mode="stretch_width")

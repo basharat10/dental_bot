@@ -1,137 +1,128 @@
 import panel as pn
 
 CSS = """
-/* 🦷 BrightSmile Minimalist Medical Theme (Gray & Off-White) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+/* 🦷 BrightSmile "Sleek Professional" Design System 2025 */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap');
 
 :root {
-    --bg-offwhite: #fcfcfc;
-    --container-white: #ffffff;
-    --border-gray: #e2e8f0;
-    --text-primary: #1a202c;
-    --text-secondary: #4a5568;
-    --text-muted: #718096;
-    --accent-blue: #2d3748; /* Deep Steel/Slate Gray for buttons */
-    --user-bubble: #edf2f7;
-    --bot-bubble: #f8fafc;
+    --bg-main: #f8fafc;
+    --card-white: #ffffff;
+    --text-deep: #0f172a;
+    --text-muted: #64748b;
+    --user-blue: #1e293b;
+    --bot-gray: #f1f5f9;
+    --accent-blue: #3b82f6;
+    --border-subtle: #e2e8f0;
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 body { 
-    background-color: var(--bg-offwhite) !important;
-    font-family: 'Inter', sans-serif !important;
-    color: var(--text-primary) !important;
+    background-color: var(--bg-main) !important;
+    font-family: 'Outfit', sans-serif !important;
+    color: var(--text-deep) !important;
 }
 
-/* Global Container Fixes */
+/* Centralized Card Container */
 .chat-container {
-    background: var(--container-white) !important;
-    border-radius: 16px !important;
-    border: 1px solid var(--border-gray) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-    padding: 24px !important;
+    background: var(--card-white) !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: var(--shadow-lg) !important;
+    padding: 32px !important;
     max-width: 800px !important;
-    margin: 40px auto !important;
+    margin: 60px auto !important;
 }
 
-/* Chat Area */
+/* Chat History Window */
 .chat-area {
     padding: 10px !important;
+    margin-bottom: 20px !important;
 }
 
-/* Message Bubbles - Clean & Minimal */
+/* Message Bubbles - Sophisticated Design */
 .user-msg {
-    background: var(--user-bubble) !important;
-    color: var(--text-primary) !important;
-    border-radius: 12px 12px 2px 12px !important;
-    padding: 12px 16px !important;
+    background: var(--user-blue) !important;
+    color: white !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 14px 20px !important;
     margin-left: auto !important;
-    max-width: 80% !important;
-    font-size: 14px !important;
-    line-height: 1.5 !important;
-    border: 1px solid var(--border-gray) !important;
+    max-width: 75% !important;
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+    box-shadow: var(--shadow-sm) !important;
 }
 
 .bot-msg {
-    background: var(--bot-bubble) !important;
-    color: var(--text-primary) !important;
-    border-radius: 12px 12px 12px 2px !important;
-    padding: 12px 16px !important;
+    background: var(--bot-gray) !important;
+    color: var(--text-deep) !important;
+    border-radius: 20px 20px 20px 4px !important;
+    padding: 14px 20px !important;
     margin-right: auto !important;
-    max-width: 85% !important;
-    font-size: 14px !important;
-    border: 1px solid var(--border-gray) !important;
+    max-width: 80% !important;
+    font-size: 15px !important;
+    border: 1px solid var(--border-subtle) !important;
 }
 
-/* Headers & Labels */
-h1, h2, h3 {
-    color: var(--text-primary) !important;
-    font-weight: 600 !important;
-    margin-bottom: 10px !important;
-}
-
+/* Labels */
 .msg-label {
-    font-size: 10px !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
     color: var(--text-muted) !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    margin-bottom: 4px !important;
+    letter-spacing: 0.1em !important;
+    margin-bottom: 6px !important;
+    opacity: 0.8;
 }
 
-/* Input Bar - Gemini Inspired Minimalist */
+/* Modern Input Wrapper */
 .input-wrapper {
-    background: var(--bot-bubble) !important;
-    border: 1px solid var(--border-gray) !important;
-    border-radius: 24px !important;
-    padding: 6px 12px !important;
-    margin-top: 20px !important;
+    background: var(--bot-gray) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 100px !important;
+    padding: 10px 20px !important;
+    margin-top: 24px !important;
     display: flex !important;
     align-items: center !important;
+    transition: all 0.3s ease !important;
 }
 
 .input-wrapper:focus-within {
-    border-color: var(--text-muted) !important;
+    background: white !important;
+    border-color: var(--accent-blue) !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
 }
 
 /* Buttons */
 .bk-btn-primary {
     background-color: var(--accent-blue) !important;
-    color: white !important;
-    border-radius: 20px !important;
-    font-weight: 500 !important;
-}
-
-.icon-btn {
-    background: transparent !important;
-    border: none !important;
-    color: var(--text-muted) !important;
-    cursor: pointer !important;
-    font-size: 16px !important;
+    border-radius: 100px !important;
+    font-weight: 600 !important;
+    padding: 12px 24px !important;
 }
 
 .quick-chip {
     background: white !important;
-    border: 1px solid var(--border-gray) !important;
-    color: var(--text-secondary) !important;
-    padding: 6px 14px !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-deep) !important;
+    padding: 8px 18px !important;
     border-radius: 100px !important;
-    font-size: 13px !important;
-    margin: 4px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    margin: 6px !important;
     transition: all 0.2s !important;
+    cursor: pointer !important;
 }
 
 .quick-chip:hover {
-    background: var(--user-bubble) !important;
+    background: var(--bot-gray) !important;
     border-color: var(--text-muted) !important;
+    transform: translateY(-1px) !important;
 }
 
-/* Footer Disclaimer */
-.footer-text {
-    font-size: 11px !important;
-    color: var(--text-muted) !important;
-    text-align: center !important;
-    margin-top: 16px !important;
-}
+/* Scrollbar */
+.chat-area::-webkit-scrollbar { width: 6px; }
+.chat-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 """
 
 def apply_styles():

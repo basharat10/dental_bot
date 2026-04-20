@@ -1,156 +1,70 @@
-import json
-import re
 import panel as pn
-from core.gemini_helper import gemini_chat
-from core.database import save_appointment
-from core.faq import get_faq_answer
+from config import CLINIC_NAME, ACCESS_CODE
+from ui.styles import apply_styles
+from ui.views.chat_view import ChatView
+from ui.views.admin_view import AdminView
+from core.logger import logger
 
-# Use modern design extensions
-pn.extension(raw_css=[
-    """
-    body { 
-        background-color: #f0f4f8; 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .chat-container {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        padding: 20px;
-        max-width: 800px;
-        margin: auto;
-    }
-    .user-msg {
-        background-color: #008080;
-        color: white;
-        border-radius: 15px 15px 0 15px;
-        padding: 12px 18px;
-        margin-bottom: 15px;
-        align-self: flex-end;
-        box-shadow: 0 4px 10px rgba(0, 128, 128, 0.2);
-    }
-    .bot-msg {
-        background-color: white;
-        color: #333;
-        border-radius: 15px 15px 15px 0;
-        padding: 12px 18px;
-        margin-bottom: 15px;
-        border: 1px solid #eef2f7;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-    }
-    .header-bar {
-        background: linear-gradient(90deg, #008080 0%, #00bfa5 100%);
-        color: white;
-        padding: 15px 30px;
-        border-radius: 0 0 20px 20px;
-        margin-bottom: 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .input-area {
-        border-top: 1px solid #eee;
-        padding-top: 15px;
-    }
-    .bk-btn-success {
-        background-color: #008080 !important;
-        border: none !important;
-    }
-    """
-])
+# Apply Global Styles
+apply_styles()
 
-# UI State is now handled directly by the chat_area widget
-def extract_json(text):
-    match = re.search(r'\{.*\}', text, re.DOTALL)
-    if match:
-        try: return json.loads(match.group())
-        except: return None
-    return None
+# Layout State
+main_area = pn.Column(sizing_mode="stretch_width")
 
-# Widgets
-inp = pn.widgets.TextInput(placeholder="Ask about booking, hours, or services...", disabled=True, sizing_mode="stretch_width")
-button = pn.widgets.Button(name="Send", button_type="primary", disabled=True, width=100)
+# Navigation Functions
+def show_chat(event=None):
+    main_area.clear()
+    main_area.append(ChatView().get_layout())
 
-# Auth
-auth_input = pn.widgets.PasswordInput(name="Staff/Patient Access Code", placeholder="Enter code (SMILE2025)")
-auth_button = pn.widgets.Button(name="Login", button_type="success", sizing_mode="stretch_width")
-status_msg = pn.widgets.StaticText(value="🔒 Portal Locked")
+def show_admin(event=None):
+    main_area.clear()
+    main_area.append(AdminView().get_layout())
 
-def login_check(event):
-    if auth_input.value == "SMILE2025":
-        inp.disabled = False
-        button.disabled = False
-        auth_area.visible = False
-        status_msg.value = "🟢 **Logged In:** Welcome to BrightSmile Portal"
-    else:
-        status_msg.value = "🔴 **Access Denied:** Please check your code."
-
-auth_button.on_click(login_check)
-
-# Layout Components
-header = pn.Row(
-    pn.pane.HTML("<h2>🦷 BrightSmile Portal</h2>"),
+# Professional Nav Bar
+nav_bar = pn.Row(
+    pn.pane.HTML(f"<h2 style='margin:0;'>🦷 {CLINIC_NAME}</h2>"),
     pn.Spacer(),
-    status_msg,
+    pn.widgets.Button(name="Patient Portal", button_type="light", on_click=show_chat),
+    pn.widgets.Button(name="Staff Access", button_type="light", on_click=show_admin),
     css_classes=['header-bar'],
     sizing_mode="stretch_width"
 )
 
+# Patient Auth Flow (Redesigned)
+auth_input = pn.widgets.PasswordInput(name="Portal Access Code", placeholder=f"Enter code ({ACCESS_CODE})")
+auth_button = pn.widgets.Button(name="Access Secure Portal", button_type="primary", sizing_mode="stretch_width")
+auth_error = pn.pane.Markdown("", styles={'color': '#e53e3e'})
+
+def login_check(event):
+    if auth_input.value == ACCESS_CODE:
+        logger.info("Patient portal access granted.")
+        show_chat()
+    else:
+        logger.warning("Portal access denied.")
+        auth_error.object = "🚨 **Access Denied:** Please verify your clinic code."
+
+auth_button.on_click(login_check)
+
 auth_area = pn.Column(
-    pn.pane.Markdown("### Welcome Back\nPlease enter your access code to start the secure consultation."),
-    auth_input, auth_button,
-    styles={'background': 'white', 'padding': '30px', 'border-radius': '15px', 'margin': 'auto', 'max-width': '400px'}
+    pn.pane.Markdown(f"""
+    # Secure Patient Consultation
+    Welcome to **{CLINIC_NAME}**. Please enter the clinic access code provided to you to begin your secure session.
+    """),
+    auth_input, auth_button, auth_error,
+    css_classes=['chat-container'],
+    styles={'max-width': '500px', 'margin': '100px auto', 'text-align': 'center'}
 )
 
-chat_area = pn.Column(scroll=True, height=450, sizing_mode="stretch_width")
+# Initialize with Auth
+main_area.append(auth_area)
 
-def send_message(event):
-    prompt = inp.value.strip()
-    if not prompt: return
-    inp.value = ""
-    
-    # Show User Message
-    chat_area.append(pn.Row(pn.pane.Markdown(f"{prompt}", css_classes=['user-msg']), align="end"))
-    
-    # Show "Thinking..." placeholder
-    thinking = pn.pane.Markdown("_DentalBot is thinking..._", css_classes=['bot-msg'])
-    chat_area.append(pn.Row(thinking))
-    
-    # 1. Check FAQ
-    faq_answer = get_faq_answer(prompt)
-    if faq_answer:
-        reply = faq_answer
-    else:
-        # 2. Call AI
-        try:
-            reply = gemini_chat(prompt)
-        except Exception as e:
-            reply = f"🚨 **AI Engine Error:** {str(e)}"
-
-    # Check for JSON confirmation
-    booking_data = extract_json(reply)
-    if booking_data and booking_data.get("status") == "confirmed":
-        save_appointment(booking_data.get("data", {}))
-        display_reply = re.sub(r'\{.*\}', '✅ **Appointment confirmed and added to our system!**', reply, flags=re.DOTALL)
-    else:
-        display_reply = reply
-
-    # Update "Thinking" bubble with real reply
-    thinking.object = display_reply
-
-button.on_click(send_message)
-
-# Assemble
 app_layout = pn.Column(
-    header,
-    pn.Column(
-        auth_area,
-        chat_area,
-        pn.Row(inp, button, css_classes=['input-area']),
-        css_classes=['chat-container']
-    ),
-    sizing_mode="stretch_width"
+    nav_bar,
+    main_area,
+    sizing_mode="stretch_width",
+    styles={'background-color': '#f7fafc', 'min-height': '100vh'}
 )
 
 if __name__ == "__main__":
-    pn.serve(app_layout, title="BrightSmile Dental Clinic")
+    logger.info("Starting Premium BrightSmile DentalBot...")
+    pn.serve(app_layout, title=CLINIC_NAME)

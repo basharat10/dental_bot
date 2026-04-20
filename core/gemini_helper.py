@@ -1,19 +1,14 @@
 import os
+import json
 from pathlib import Path
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from config import GEMINI_API_KEY, GEMINI_MODEL, KNOWLEDGE_BASE_DIR
+from core.logger import logger
 
-# Load API key/token from project root .env
-ROOT_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(dotenv_path=ROOT_DIR / ".env")
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-# REWIRING: If it's an AQ. token, we handle it as an OAuth2 credential
-if api_key and api_key.startswith("AQ."):
+# Initialize Gemini Client
+if GEMINI_API_KEY and GEMINI_API_KEY.startswith("AQ."):
     from google.auth.credentials import Credentials
-    
     class TokenCredentials(Credentials):
         def __init__(self, token):
             super().__init__()
@@ -24,61 +19,75 @@ if api_key and api_key.startswith("AQ."):
             self.apply(headers)
         def refresh(self, request):
             pass
-
-    client = genai.Client(credentials=TokenCredentials(api_key))
+    client = genai.Client(credentials=TokenCredentials(GEMINI_API_KEY))
 else:
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
-# System prompt
-SYSTEM_PROMPT = """
-You are DentalBot, a friendly assistant for BrightSmile Dental Clinic.
+def load_knowledge_base():
+    """Loads all markdown files from the knowledge base directory."""
+    kb_content = ""
+    for file in KNOWLEDGE_BASE_DIR.glob("*.md"):
+        try:
+            with open(file, "r", encoding="utf-8") as f:
+                kb_content += f"\n--- {file.name} ---\n" + f.read()
+        except Exception as e:
+            logger.error(f"Error loading KB file {file}: {e}")
+    return kb_content
 
-Your tasks:
-1. Greet the customer politely.
-2. If the user wants to book an appointment:
-   - Ask for their Name, Service (e.g., Cleaning, Filling), Date, Time, and any Notes.
-   - Once all details are gathered, summarize them and ask for confirmation.
-3. If the user CONFIRMS the appointment, you MUST output a JSON block at the end of your message.
+SYSTEM_PROMPT = f"""
+You are DentalBot, a premium AI concierge for BrightSmile Dental Clinic.
 
-JSON Format for confirmation:
-{
+KNOWLEDGE BASE:
+{load_knowledge_base()}
+
+YOUR CAPABILITIES:
+1. Greet patients warmly.
+2. TRIAGE & SENTIMENT: If the user mentions "pain", "broken", "bleeding", or "urgent", acknowledge the urgency and advise them to call our emergency hotline (555) 000-9999 immediately while still helping them book.
+3. RAG: Use the provided Knowledge Base to explain procedures (Cleaning, Root Canal, etc.) accurately.
+4. BOOKING: Gather Name, Service, Date, Time, and Notes.
+5. JSON CONFIRMATION: Once an appointment is confirmed by the user, you MUST include this JSON block at the very end:
+{{
   "status": "confirmed",
-  "data": {
+  "data": {{
     "name": "...",
     "service": "...",
     "date": "...",
     "time": "...",
     "notes": "..."
-  }
-}
+  }}
+}}
 
-4. Answer general questions about the clinic.
-5. Always ask: "Is there anything else I can help you with?"
+6. MULTILINGUAL: Respond in the same language the user uses.
 """
 
-# Maintain chat history manually
 chat_history = []
 
 def gemini_chat(user_text):
-    """
-    Sends user message to Gemini and returns reply.
-    """
-    chat_history.append(
-        types.Content(role="user", parts=[types.Part(text=user_text)])
-    )
+    """Sends user message to Gemini and returns reply with sentiment awareness."""
+    try:
+        logger.info(f"User input: {user_text}")
+        
+        chat_history.append(
+            types.Content(role="user", parts=[types.Part(text=user_text)])
+        )
 
-    response = client.models.generate_content(
-        model="gemini-flash-latest",
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            # We'll use plain text but instruct it to include JSON so we can parse it easily
-        ),
-        contents=chat_history,
-    )
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                temperature=0.7,
+            ),
+            contents=chat_history,
+        )
 
-    reply = response.text
-    chat_history.append(
-        types.Content(role="model", parts=[types.Part(text=reply)])
-    )
+        reply = response.text
+        logger.info(f"AI Reply: {reply[:100]}...")
+        
+        chat_history.append(
+            types.Content(role="model", parts=[types.Part(text=reply)])
+        )
 
-    return reply
+        return reply
+    except Exception as e:
+        logger.error(f"Gemini API Error: {e}")
+        raise e

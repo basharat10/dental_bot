@@ -1,49 +1,63 @@
-# 🦷 BrightSmile DentalBot
+# 🦷 BrightSmile Dental Portal (Professional AI Agent)
 
-A premium, AI-powered conversational assistant for modern dental clinics. Built with Gemini 1.5/2.0 Flash and Panel.
+A premium, enterprise-grade AI conversational agent and clinic management portal designed for modern dental practices.
 
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Python](https://img.shields.io/badge/python-3.11-green)
-![AI](https://img.shields.io/badge/AI-Gemini%20Flash-orange)
+![AI Engine](https://img.shields.io/badge/AI-Gemini%201.5%20/%202.0%20Flash-blue)
+![UI Framework](https://img.shields.io/badge/UI-Panel%20(Clinical%20Zen)-teal)
+![Architecture](https://img.shields.io/badge/Architecture-Modular%20MVVM-green)
 
-## ✨ Features
-- **💎 Premium UI:** Modern teal-themed chat interface with a secure clinic portal.
-- **🧠 Hybrid AI:** Combines Gemini 1.5/2.0 Flash with a local FAQ engine for lightning-fast responses.
-- **🗄️ Database Integration:** Saves all appointments automatically to a local SQLite database.
-- **🔐 Secure Access:** Protected by a clinic access code to prevent spam bookings.
-- **⚡ Instant Answers:** Local FAQ system handles common clinic questions instantly without API calls.
+## ✨ Peak Features
+
+### 🧠 Advanced AI & Knowledge
+- **RAG-Powered Intelligence:** Uses Retrieval-Augmented Generation to provide expert-verified answers from a local dental knowledge base.
+- **Sentiment-Aware Triage:** Automatically detects dental emergencies and pain, escalating them to an priority hotline protocol.
+- **Multilingual Support:** Seamlessly communicates in the patient's native language.
+
+### 💎 Clinical Zen UI
+- **Premium Aesthetics:** A high-end "Medical Blue" theme with glassmorphism and modern typography.
+- **Micro-Animations:** Fluid message fade-ins and animated typing indicators for an organic feel.
+- **Quick Action Chips:** Tap-to-interact buttons for common tasks like booking, hours, and location.
+
+### 🏥 Staff Command Center
+- **Secure Dashboard:** Password-protected staff portal (Admin Access).
+- **Live Analytics:** Real-time stats on appointment volume and status.
+- **Data Export:** One-click CSV export of all patient consultation records.
+
+## 📂 Project Structure
+
+```text
+dental_bot/
+├── app.py              # Main Entry Point & Router
+├── config.py           # Global Configuration & Security
+├── core/               # Business Logic Layer
+│   ├── ai_engine.py    # Gemini & RAG Integration
+│   ├── database.py     # SQLite Persistence
+│   ├── admin_logic.py  # Staff Analytics & Export
+│   ├── logger.py       # Production-grade Logging
+│   └── knowledge_base/ # Expert Dental Documentation
+├── ui/                 # Presentation Layer
+│   ├── styles.py       # "Clinical Zen" Design System
+│   └── views/          # Modular UI Components (Chat/Admin)
+└── data/               # Persistent Storage
+```
 
 ## 🚀 Getting Started
 
-### 1. Prerequisites
-- Python 3.11+
-- A Google AI Studio API Key
+1. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 2. Installation
-Clone the repository and install dependencies:
-```bash
-pip install -r requirements.txt
-```
+2. **Configure Environment:**
+   Create a `.env` file:
+   ```text
+   GEMINI_API_KEY=your_key_here
+   ```
 
-### 3. Configuration
-Create a `.env` file in the root directory and add your key:
-```text
-GEMINI_API_KEY=your_api_key_here
-```
-
-### 4. Run the App
-```bash
-python app.py
-```
-**Access Code:** `SMILE2025`
-
-## 📂 Project Structure
-- `app.py`: Main UI and application logic.
-- `core/`: Backend modules (Database, FAQ, AI Helper).
-- `data/`: SQLite database storage.
-
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+3. **Run the Portal:**
+   ```bash
+   python app.py
+   ```
 
 ---
-*Created with ❤️ for BrightSmile Dental Clinic.*
+*Developed with ❤️ for premium dental care.*

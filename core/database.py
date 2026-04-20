@@ -18,7 +18,9 @@ def init_db():
             appointment_date TEXT NOT NULL,
             appointment_time TEXT NOT NULL,
             notes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            status TEXT DEFAULT 'Pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
@@ -54,6 +56,20 @@ def save_appointment(data):
     except Exception as e:
         print(f"Database error: {e}")
         return False
+
+def get_all_appointments():
+    """Returns a list of all appointments from the database."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM appointments ORDER BY created_at DESC')
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Database error: {e}")
+        return []
 
 # Initialize on import
 init_db()

@@ -1,134 +1,137 @@
 import panel as pn
 
 CSS = """
-/* Hospitality-First "Clinical Zen" Design System 2025 */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+/* 🦷 BrightSmile Minimalist Medical Theme (Gray & Off-White) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-    --primary-blue: #1a365d;
-    --accent-teal: #38b2ac;
-    --soft-gray: #f8fafc;
-    --warm-white: #ffffff;
-    --glass-bg: rgba(255, 255, 255, 0.85);
-    --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.04), 0 5px 15px rgba(0, 0, 0, 0.03);
-    --radius-lg: 32px;
-    --radius-md: 20px;
+    --bg-offwhite: #fcfcfc;
+    --container-white: #ffffff;
+    --border-gray: #e2e8f0;
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --accent-blue: #2d3748; /* Deep Steel/Slate Gray for buttons */
+    --user-bubble: #edf2f7;
+    --bot-bubble: #f8fafc;
 }
 
 body { 
-    background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
-    font-family: 'Outfit', sans-serif;
-    color: var(--primary-blue);
-    margin: 0;
+    background-color: var(--bg-offwhite) !important;
+    font-family: 'Inter', sans-serif !important;
+    color: var(--text-primary) !important;
 }
 
-/* Glassmorphism Container */
+/* Global Container Fixes */
 .chat-container {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-premium);
-    padding: 40px;
-    max-width: 900px;
-    margin: 40px auto;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--container-white) !important;
+    border-radius: 16px !important;
+    border: 1px solid var(--border-gray) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    padding: 24px !important;
+    max-width: 800px !important;
+    margin: 40px auto !important;
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Chat Area */
+.chat-area {
+    padding: 10px !important;
 }
 
-/* Premium Header */
-.header-bar {
-    background: transparent;
-    padding: 20px 0;
-    margin-bottom: 30px;
-}
-
-.header-bar h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    color: var(--primary-blue);
-    letter-spacing: -0.5px;
-}
-
-/* Message Bubbles: Organic Shapes */
+/* Message Bubbles - Clean & Minimal */
 .user-msg {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, #2c5282 100%);
-    color: white;
-    border-radius: 24px 24px 4px 24px;
-    padding: 18px 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 20px rgba(26, 54, 93, 0.1);
-    font-weight: 400;
-    line-height: 1.6;
+    background: var(--user-bubble) !important;
+    color: var(--text-primary) !important;
+    border-radius: 12px 12px 2px 12px !important;
+    padding: 12px 16px !important;
+    margin-left: auto !important;
+    max-width: 80% !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    border: 1px solid var(--border-gray) !important;
 }
 
 .bot-msg {
-    background: white;
-    color: var(--primary-blue);
-    border-radius: 24px 24px 24px 4px;
-    padding: 18px 24px;
-    margin-bottom: 20px;
-    border: 1px solid #edf2f7;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    background: var(--bot-bubble) !important;
+    color: var(--text-primary) !important;
+    border-radius: 12px 12px 12px 2px !important;
+    padding: 12px 16px !important;
+    margin-right: auto !important;
+    max-width: 85% !important;
+    font-size: 14px !important;
+    border: 1px solid var(--border-gray) !important;
 }
 
-/* Chips: Minimalist Boutique Style */
+/* Headers & Labels */
+h1, h2, h3 {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    margin-bottom: 10px !important;
+}
+
+.msg-label {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 4px !important;
+}
+
+/* Input Bar - Gemini Inspired Minimalist */
+.input-wrapper {
+    background: var(--bot-bubble) !important;
+    border: 1px solid var(--border-gray) !important;
+    border-radius: 24px !important;
+    padding: 6px 12px !important;
+    margin-top: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--text-muted) !important;
+}
+
+/* Buttons */
+.bk-btn-primary {
+    background-color: var(--accent-blue) !important;
+    color: white !important;
+    border-radius: 20px !important;
+    font-weight: 500 !important;
+}
+
+.icon-btn {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-muted) !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+}
+
 .quick-chip {
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: var(--primary-blue);
-    padding: 10px 22px;
-    border-radius: 50px;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    background: white !important;
+    border: 1px solid var(--border-gray) !important;
+    color: var(--text-secondary) !important;
+    padding: 6px 14px !important;
+    border-radius: 100px !important;
+    font-size: 13px !important;
+    margin: 4px !important;
+    transition: all 0.2s !important;
 }
 
 .quick-chip:hover {
-    background: var(--primary-blue);
-    color: white;
-    border-color: var(--primary-blue);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(26, 54, 93, 0.1);
+    background: var(--user-bubble) !important;
+    border-color: var(--text-muted) !important;
 }
 
-/* Treatment Visualizer Cards */
-.treatment-card {
-    background: linear-gradient(to right, #f8fafc, #ffffff);
-    border-left: 4px solid var(--accent-teal);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 15px 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+/* Footer Disclaimer */
+.footer-text {
+    font-size: 11px !important;
+    color: var(--text-muted) !important;
+    text-align: center !important;
+    margin-top: 16px !important;
 }
-
-/* Input Area: Floating Bar */
-.input-area {
-    background: white;
-    border-radius: 100px;
-    padding: 8px 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    margin-top: 30px;
-    border: 1px solid #edf2f7;
-}
-
-.bk-btn-primary {
-    background: var(--primary-blue) !important;
-    border-radius: 100px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.5px !important;
-}
-
-/* Animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
 """
 
 def apply_styles():

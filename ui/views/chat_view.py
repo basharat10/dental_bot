@@ -15,27 +15,25 @@ def extract_json(text):
 
 class ChatView:
     def __init__(self):
+        # Header Info
+        header = pn.Column(
+            pn.pane.Markdown("# Patient Consultation"),
+            pn.pane.Markdown("_Welcome to BrightSmile. How can we assist you today?_", styles={'color': '#718096'}),
+            sizing_mode="stretch_width"
+        )
+
         # Chat History Area
         self.chat_area = pn.Column(
             scroll=True, 
-            height=600, 
+            height=450, 
             sizing_mode="stretch_width",
             css_classes=['chat-area']
         )
         
-        # Welcome Intro (Redesigned)
-        intro = pn.pane.Markdown("""
-        # *Welcome to BrightSmile*
-        ### Experience Dental Care Redefined.
-        How can we help your smile today? 
-        """, css_classes=['bot-msg'], styles={'text-align': 'center', 'margin-bottom': '30px'})
-        self.chat_area.append(intro)
-
-        # Quick Actions (Charming Chips)
+        # Quick Actions
         self.chips = pn.Row(
             pn.widgets.Button(name="🗓️ Book Cleaning", css_classes=['quick-chip']),
-            pn.widgets.Button(name="💎 Teeth Whitening", css_classes=['quick-chip']),
-            pn.widgets.Button(name="🕒 Clinic Hours", css_classes=['quick-chip']),
+            pn.widgets.Button(name="🕒 Hours", css_classes=['quick-chip']),
             pn.widgets.Button(name="🚨 Emergency", css_classes=['quick-chip']),
             sizing_mode="stretch_width",
             styles={'justify-content': 'center'}
@@ -44,14 +42,14 @@ class ChatView:
         for chip in self.chips:
             chip.on_click(self.handle_chip)
 
-        # Input Area (Floating Style)
-        self.image_input = pn.widgets.FileInput(accept='.jpg,.jpeg,.png', sizing_mode="fixed", width=40, height=40)
-        self.mic_button = pn.widgets.Button(name="🎤", width=40, height=40, css_classes=['mic-btn'])
+        # Input Section (Clean Gemini Layout)
+        self.image_input = pn.widgets.FileInput(accept='.jpg,.jpeg,.png', width=50, css_classes=['icon-btn'])
+        self.mic_button = pn.widgets.Button(name="🎤", width=40, css_classes=['icon-btn'])
         self.input_widget = pn.widgets.TextInput(
-            placeholder="Tell us what's on your mind...", 
+            placeholder="Type your message here...", 
             sizing_mode="stretch_width"
         )
-        self.send_button = pn.widgets.Button(name="Send", button_type="primary", width=100)
+        self.send_button = pn.widgets.Button(name="➤", width=50, height=40, button_type="primary")
         self.send_button.on_click(self.handle_send)
         
         # JS for Speech-to-Text
@@ -59,23 +57,36 @@ class ChatView:
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.lang = 'en-US';
             recognition.start();
-            target.placeholder = "Listening...";
             recognition.onresult = (event) => {
                 target.value = event.results[0][0].transcript;
-                target.placeholder = "Ask, upload, or speak...";
             };
         """)
 
+        input_row = pn.Row(
+            self.image_input,
+            self.mic_button,
+            self.input_widget,
+            self.send_button,
+            css_classes=['input-wrapper'],
+            sizing_mode="stretch_width"
+        )
+        
+        disclaimer = pn.pane.Markdown(
+            "AI Assistant: Professional dental advice should always be sought for clinical diagnosis.",
+            css_classes=['footer-text']
+        )
+
         self.layout = pn.Column(
+            header,
             self.chat_area,
             self.chips,
-            pn.Row(self.image_input, self.mic_button, self.input_widget, self.send_button, css_classes=['input-area']),
+            input_row,
+            disclaimer,
             css_classes=['chat-container']
         )
 
     def handle_chip(self, event):
-        query = event.obj.name.split(" ", 1)[-1]
-        self.input_widget.value = query
+        self.input_widget.value = event.obj.name.split(" ", 1)[-1]
         self.handle_send(None)
 
     def handle_send(self, event):
@@ -88,81 +99,57 @@ class ChatView:
         self.input_widget.value = ""
         self.image_input.value = None
         
-        # Add User Bubble (Right Aligned)
+        # Add User Message
         user_content = [pn.pane.Markdown(user_msg)] if user_msg else []
         if image_data:
-            user_content.append(pn.pane.JPG(image_data, width=250))
+            user_content.append(pn.pane.JPG(image_data, width=200))
             
         self.chat_area.append(
             pn.Row(
                 pn.Spacer(),
-                pn.Column(*user_content, css_classes=['user-msg']),
+                pn.Column(
+                    pn.pane.HTML("PATIENT", css_classes=['msg-label'], styles={'text-align': 'right'}),
+                    pn.Column(*user_content, css_classes=['user-msg']),
+                    sizing_mode="stretch_width"
+                ),
                 sizing_mode="stretch_width"
             )
         )
         
-        # Animated Thinking Indicator
-        thinking_html = """
-        <div class="bot-msg">
-            <span style="font-size: 11px; opacity: 0.6; display: block; margin-bottom: 5px;">BRIGHTSMILE BOT</span>
-            <div class="typing-dots">
-                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-            </div>
-        </div>
-        """
-        thinking = pn.pane.HTML(thinking_html)
+        # Bot Loading State
+        thinking = pn.Column(
+            pn.pane.HTML("BRIGHTSMILE AI", css_classes=['msg-label']),
+            pn.pane.Markdown("...", css_classes=['bot-msg']),
+            sizing_mode="stretch_width"
+        )
         self.chat_area.append(thinking)
         
         try:
-            if not image_data:
-                faq_reply = get_faq_answer(user_msg)
-            else:
-                faq_reply = None
+            reply = get_faq_answer(user_msg) if not image_data else None
+            if not reply:
+                reply = gemini_chat(user_msg or "Explain photo.", image_data=image_data)
 
-            reply = faq_reply or gemini_chat(user_msg or "Analyze photo.", image_data=image_data)
-
-            # Process AI output for cards
+            # JSON Confirmation Logic
             booking_data = extract_json(reply)
             if booking_data and booking_data.get("status") == "confirmed":
                 if save_appointment(booking_data.get("data", {})):
-                    reply = re.sub(r'\{.*\}', '✨ **Your appointment is perfectly set. See you soon!**', reply, flags=re.DOTALL)
+                    reply = re.sub(r'\{.*\}', '✅ **Appointment confirmed.**', reply, flags=re.DOTALL)
 
             self.chat_area.remove(thinking)
             
-            # Speaker Logic
-            speaker_btn = pn.widgets.Button(name="🔊", width=30, height=30, css_classes=['speaker-btn'])
-            speaker_btn.js_on_click(args={'text': reply}, code="""
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                window.speechSynthesis.speak(utterance);
-            """)
-
-            # Dynamic Content
-            final_content = []
-            
-            # Emergency/Triage Card
-            if any(x in reply.lower() for x in ["emergency", "hotline", "urgency"]):
-                final_content.append(pn.pane.Markdown("🚨 **Urgent Care Protocol Active**", styles={'color': '#e53e3e', 'font-weight': '600'}))
-
-            # Cost Specialist Card
-            if "cost" in reply.lower() or "price" in reply.lower():
-                final_content.append(pn.Column(pn.pane.Markdown("### 💰 Financial Estimate"), css_classes=['treatment-card']))
-
-            # Main Body
-            clean_reply = re.sub(r'\{.*\}', '', reply, flags=re.DOTALL).strip()
-            final_content.append(pn.pane.Markdown(clean_reply))
-
-            bot_bubble = pn.Column(
-                pn.Row(pn.pane.HTML("<small>BRIGHTSMILE BOT</small>", styles={'opacity': '0.5'}), pn.Spacer(), speaker_btn),
-                *final_content,
-                css_classes=['bot-msg']
+            # Add Bot Message
+            self.chat_area.append(
+                pn.Column(
+                    pn.pane.HTML("BRIGHTSMILE AI", css_classes=['msg-label']),
+                    pn.pane.Markdown(re.sub(r'\{.*\}', '', reply).strip(), css_classes=['bot-msg']),
+                    sizing_mode="stretch_width"
+                )
             )
-            self.chat_area.append(bot_bubble)
             
         except Exception as e:
             logger.error(f"Chat error: {e}")
             self.chat_area.remove(thinking)
-            self.chat_area.append(pn.pane.Markdown(f"🙏 **Apologies:** {str(e)}", css_classes=['bot-msg']))
+            self.chat_area.append(pn.pane.Markdown(f"⚠️ Error: {str(e)}", css_classes=['bot-msg']))
 
     def get_layout(self):
         return self.layout

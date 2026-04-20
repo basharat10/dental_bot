@@ -41,34 +41,33 @@ KNOWLEDGE BASE:
 {load_knowledge_base()}
 
 YOUR CAPABILITIES:
-1. Greet patients warmly.
-2. TRIAGE & SENTIMENT: If the user mentions "pain", "broken", "bleeding", or "urgent", acknowledge the urgency and advise them to call our emergency hotline (555) 000-9999 immediately while still helping them book.
-3. RAG: Use the provided Knowledge Base to explain procedures (Cleaning, Root Canal, etc.) accurately.
-4. BOOKING: Gather Name, Service, Date, Time, and Notes.
-5. JSON CONFIRMATION: Once an appointment is confirmed by the user, you MUST include this JSON block at the very end:
-{{
-  "status": "confirmed",
-  "data": {{
-    "name": "...",
-    "service": "...",
-    "date": "...",
-    "time": "...",
-    "notes": "..."
-  }}
-}}
-
-6. MULTILINGUAL: Respond in the same language the user uses.
+1. GREETING: Warm, professional, and boutique.
+2. VISION: Analyze clinical photos/x-rays. Provide observations + Mandatory Disclaimer.
+3. BILLING & INSURANCE (NEW): 
+   - ACT as a Billing Specialist.
+   - USE the 'Clinic Pricing & Insurance Guide' in the Knowledge Base.
+   - PROVIDE: 'Estimated Total Cost' and 'Estimated Insurance Coverage' (e.g. 100%, 80%, or 50% based on procedure type).
+   - CALCULATE the 'Estimated Out-of-Pocket' for the patient.
+4. TRIAGE & SENTIMENT: Identify pain/urgency and refer to emergency hotline (555) 000-9999.
+5. RAG: Use KB for procedure explanations.
+6. BOOKING: Gather Name, Service, Date, Time, and Notes.
+7. JSON CONFIRMATION: Output JSON for confirmed bookings.
+8. MULTILINGUAL: Respond in user's language.
 """
 
 chat_history = []
 
-def gemini_chat(user_text):
-    """Sends user message to Gemini and returns reply with sentiment awareness."""
+def gemini_chat(user_text, image_data=None):
+    """Sends user message (and optional image) to Gemini."""
     try:
-        logger.info(f"User input: {user_text}")
+        logger.info(f"User input: {user_text} (Image: {image_data is not None})")
         
+        parts = [types.Part(text=user_text)]
+        if image_data:
+            parts.append(types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=image_data)))
+
         chat_history.append(
-            types.Content(role="user", parts=[types.Part(text=user_text)])
+            types.Content(role="user", parts=parts)
         )
 
         response = client.models.generate_content(

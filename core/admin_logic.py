@@ -30,3 +30,13 @@ def export_appointments_to_csv(filename="appointments_export.csv"):
     except Exception as e:
         logger.error(f"Export error: {e}")
         return False
+
+def generate_recovery_message(patient_name, procedure):
+    """Generates a professional recovery check-in message."""
+    messages = {
+        "Cleaning": f"Hi {patient_name}, hope your teeth feel fresh after your cleaning! Remember to avoid dark liquids for a few hours. - BrightSmile Team",
+        "Filling": f"Hi {patient_name}, just checking in after your filling. If you feel any high spots or sensitivity that doesn't fade, let us know! - BrightSmile Team",
+        "Root Canal": f"Hi {patient_name}, it's been 24h since your root canal. Some soreness is normal, but if you have swelling or extreme pain, call us immediately! - BrightSmile Team",
+        "Crown": f"Hi {patient_name}, hope your new crown is feeling comfortable. Avoid sticky foods on that side today. - BrightSmile Team"
+    }
+    return messages.get(procedure, f"Hi {patient_name}, just checking in on your recovery after your recent visit. How are you feeling? - BrightSmile Team")

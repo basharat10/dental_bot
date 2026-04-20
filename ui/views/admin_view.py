@@ -1,6 +1,6 @@
 import panel as pn
 import pandas as pd
-from core.admin_logic import get_appointment_stats, export_appointments_to_csv
+from core.admin_logic import get_appointment_stats, export_appointments_to_csv, generate_recovery_message
 from core.database import get_all_appointments
 from config import ADMIN_PASSWORD
 
@@ -32,43 +32,62 @@ class AdminView:
 
     def build_dashboard(self):
         stats = get_appointment_stats()
+        appointments = get_all_appointments()
         
-        # Stats Cards
+        # TAB 1: Analytics Overview
         cards = pn.Row(
             pn.Column(pn.pane.Markdown("#### Total"), pn.pane.Markdown(f"<span class='stat-value'>{stats['total']}</span>"), css_classes=['admin-card']),
             pn.Column(pn.pane.Markdown("#### Pending"), pn.pane.Markdown(f"<span class='stat-value'>{stats['pending']}</span>"), css_classes=['admin-card']),
             pn.Column(pn.pane.Markdown("#### Confirmed"), pn.pane.Markdown(f"<span class='stat-value'>{stats['confirmed']}</span>"), css_classes=['admin-card'])
         )
 
-        # Data Table
-        appointments = get_all_appointments()
         if appointments:
             df = pd.DataFrame(appointments)
-            # Hide some internal columns if needed, or show all
             table = pn.widgets.Tabulator(df, pagination='remote', page_size=10, sizing_mode="stretch_width")
         else:
-            table = pn.pane.Markdown("_No appointments found._")
+            table = pn.pane.Markdown("_No recent activity._")
 
-        # Export Button
         export_btn = pn.widgets.Button(name="Export to CSV", button_type="success")
         export_msg = pn.pane.Markdown("")
-        
-        def do_export(event):
-            if export_appointments_to_csv():
-                export_msg.object = "Export successful! (appointments_export.csv)"
-            else:
-                export_msg.object = "Export failed."
-                
-        export_btn.on_click(do_export)
+        export_btn.on_click(lambda e: export_msg.update(object="✅ Exported!" if export_appointments_to_csv() else "❌ Failed"))
 
-        self.dashboard_view.clear()
-        self.dashboard_view.extend([
-            pn.pane.Markdown("## 🏥 Clinic Management Dashboard"),
+        overview_tab = pn.Column(
+            pn.pane.Markdown("### 📊 Practice Analytics"),
             cards,
-            pn.pane.Markdown("### Recent Appointments"),
+            pn.pane.Markdown("### 🗓️ Recent Appointments"),
             table,
             pn.Row(export_btn, export_msg)
-        ])
+        )
+
+        # TAB 2: Recovery Tracker
+        recovery_list = pn.Column(pn.pane.Markdown("### 🌡️ Recovery Follow-up Hub"), sizing_mode="stretch_width")
+        
+        if appointments:
+            # Filter for completed-looking appointments (e.g. status 'Confirmed' or older)
+            for appt in appointments[:5]:  # Show latest 5 for recovery
+                msg = generate_recovery_message(appt['name'], appt['service'])
+                row = pn.Row(
+                    pn.Column(
+                        pn.pane.Markdown(f"**{appt['name']}** - {appt['service']}"),
+                        pn.pane.Markdown(f"_{msg}_", styles={'font-size': '12px', 'color': '#718096'}),
+                        css_classes=['admin-card'],
+                        sizing_mode="stretch_width"
+                    ),
+                    pn.widgets.Button(name="Send via WhatsApp", button_type="primary", width=150),
+                    pn.widgets.Button(name="Call Patient", button_type="light", width=120)
+                )
+                recovery_list.append(row)
+        else:
+            recovery_list.append(pn.pane.Markdown("_No patients pending recovery follow-up._"))
+
+        self.dashboard_view.clear()
+        self.dashboard_view.append(
+            pn.Tabs(
+                ("📈 Overview", overview_tab),
+                ("🌡️ Recovery Hub", recovery_list),
+                sizing_mode="stretch_width"
+            )
+        )
 
     def get_layout(self):
         return self.layout

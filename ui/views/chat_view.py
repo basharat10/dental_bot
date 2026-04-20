@@ -111,17 +111,22 @@ class ChatView:
                     reply = re.sub(r'\{.*\}', '🚨 **Error saving appointment. Please contact the clinic.**', reply, flags=re.DOTALL)
 
             # Update thinking with real reply
-            final_reply = f"""
-            <div class="bot-msg">
-                <span style="font-size: 12px; color: #718096; display: block; margin-bottom: 5px;"><b>BrightSmile Bot</b></span>
-                {pn.pane.Markdown(reply).object}
-            </div>
-            """
-            thinking.object = final_reply
+            self.chat_area.remove(thinking)
+            bot_bubble = pn.Column(
+                pn.pane.HTML("<b>BrightSmile Bot</b>", styles={'font-size': '12px', 'margin-bottom': '5px', 'color': '#718096'}),
+                pn.pane.Markdown(reply),
+                css_classes=['bot-msg']
+            )
+            self.chat_area.append(bot_bubble)
             
         except Exception as e:
             logger.error(f"Chat Error: {e}")
-            thinking.object = f"<div class='bot-msg'>🚨 **System Error:** {str(e)}</div>"
+            self.chat_area.remove(thinking)
+            error_bubble = pn.Column(
+                pn.pane.Markdown(f"🚨 **System Error:** {str(e)}"),
+                css_classes=['bot-msg']
+            )
+            self.chat_area.append(error_bubble)
 
     def get_layout(self):
         return self.layout

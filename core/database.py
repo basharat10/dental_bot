@@ -24,6 +24,16 @@ def init_db():
         )
     ''')
     conn.commit()
+    
+    # Migration: Add columns if they don't exist
+    try:
+        cursor.execute("ALTER TABLE appointments ADD COLUMN status TEXT DEFAULT 'Pending'")
+    except: pass
+    try:
+        cursor.execute("ALTER TABLE appointments ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    except: pass
+    
+    conn.commit()
     conn.close()
 
 def save_appointment(data):

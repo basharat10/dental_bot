@@ -3,22 +3,33 @@ import re
 import json
 from core.gemini_helper import gemini_chat
 from core.database import save_appointment
+from core.booking_parser import normalize_appointment_payload
 from core.faq import get_faq_answer
 from core.logger import logger
 
 def extract_json(text):
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if match:
-        try: return json.loads(match.group())
-        except: return None
+        try:
+            return json.loads(match.group())
+        except (json.JSONDecodeError, TypeError):
+            return None
     return None
+
+
+MAX_CHAT_HISTORY = 20  # Keep last N messages to avoid unbounded token growth
+
 
 class ChatView:
     def __init__(self):
+        self.chat_history = []
         # Professional Header
         header = pn.Column(
-            pn.pane.Markdown("## Consultation Portal"),
-            pn.pane.Markdown("Welcome back. Please share your concerns or ask about our services.", styles={'color': '#64748b', 'font-size': '14px'}),
+            pn.pane.Markdown("## AI Dental Assistant"),
+            pn.pane.Markdown(
+                "Describe symptoms, ask billing questions, or share an image for guidance.",
+                styles={'color': '#475569', 'font-size': '14px'}
+            ),
             sizing_mode="stretch_width"
         )
 
@@ -34,16 +45,19 @@ class ChatView:
         self.chat_area.append(
             pn.Column(
                 pn.pane.HTML("BRIGHTSMILE AI", css_classes=['msg-label']),
-                pn.pane.Markdown("Hello! I'm your virtual dental assistant. How can I help you today?", css_classes=['bot-msg'])
+                pn.pane.Markdown(
+                    "Hello, I am your virtual dental assistant. How can I support you today?",
+                    css_classes=['bot-msg']
+                )
             )
         )
 
         # Chips Section
         self.chips = pn.Row(
-            pn.widgets.Button(name="🗓️ Book Cleaning", css_classes=['quick-chip']),
-            pn.widgets.Button(name="🕒 Hours", css_classes=['quick-chip']),
-            pn.widgets.Button(name="🚨 Emergency", css_classes=['quick-chip']),
-            pn.widgets.Button(name="📍 Location", css_classes=['quick-chip']),
+            pn.widgets.Button(name="Book cleaning", css_classes=['quick-chip']),
+            pn.widgets.Button(name="Clinic hours", css_classes=['quick-chip']),
+            pn.widgets.Button(name="Emergency support", css_classes=['quick-chip']),
+            pn.widgets.Button(name="Clinic location", css_classes=['quick-chip']),
             styles={'justify-content': 'center', 'margin': '10px 0'}
         )
         
@@ -52,18 +66,16 @@ class ChatView:
 
         # Input Wrapper (Sleek Style)
         self.image_input = pn.widgets.FileInput(accept='.jpg,.jpeg,.png', width=50, css_classes=['icon-btn'], align="center")
-        self.mic_button = pn.widgets.Button(name="🎤", width=40, css_classes=['icon-btn'], align="center")
         self.input_widget = pn.widgets.TextInput(
             placeholder="Type your message...", 
             sizing_mode="stretch_width",
             styles={'background': 'transparent', 'border': 'none'}
         )
-        self.send_button = pn.widgets.Button(name="➤", width=60, height=45, button_type="primary", align="center")
+        self.send_button = pn.widgets.Button(name="Send", width=80, height=40, button_type="primary", align="center")
         self.send_button.on_click(self.handle_send)
         
         input_row = pn.Row(
             self.image_input,
-            self.mic_button,
             self.input_widget,
             self.send_button,
             css_classes=['input-wrapper'],
@@ -71,8 +83,8 @@ class ChatView:
         )
         
         disclaimer = pn.pane.Markdown(
-            "Dental clinical diagnosis requires a physical exam. Our AI provides general information and assistance.",
-            styles={'font-size': '11px', 'color': '#94a3b8', 'text-align': 'center', 'margin-top': '20px'}
+            "This assistant provides informational support and does not replace an in-clinic examination.",
+            styles={'font-size': '11px', 'color': '#64748b', 'text-align': 'center', 'margin-top': '16px'}
         )
 
         self.layout = pn.Column(
@@ -126,7 +138,21 @@ class ChatView:
         try:
             reply = get_faq_answer(user_msg) if not image_data else None
             if not reply:
-                reply = gemini_chat(user_msg or "Analyze photo.", image_data=image_data)
+                reply = gemini_chat(
+                    user_msg or "Analyze photo.",
+                    chat_history=self.chat_history,
+                    image_data=image_data,
+                )
+
+            # Cap chat history to prevent unbounded token growth
+            if len(self.chat_history) > MAX_CHAT_HISTORY:
+                self.chat_history = self.chat_history[-MAX_CHAT_HISTORY:]
+
+            appointment_data = normalize_appointment_payload(extract_json(reply))
+            if appointment_data:
+                saved = save_appointment(appointment_data)
+                if not saved:
+                    logger.warning("Detected booking JSON but failed to save appointment.")
 
             self.chat_area.remove(thinking)
             

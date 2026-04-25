@@ -1,4 +1,5 @@
 import pandas as pd
+from config import DATA_DIR
 from core.database import get_all_appointments
 from core.logger import logger
 
@@ -17,18 +18,19 @@ def get_appointment_stats():
     return stats
 
 def export_appointments_to_csv(filename="appointments_export.csv"):
-    """Exports all appointments to a CSV file."""
+    """Exports all appointments to a CSV file in the data directory."""
     try:
         appointments = get_all_appointments()
         if not appointments:
             return False
         
+        filepath = DATA_DIR / filename
         df = pd.DataFrame(appointments)
-        df.to_csv(filename, index=False)
-        logger.info(f"Appointments exported to {filename}")
+        df.to_csv(filepath, index=False)
+        logger.info("Appointments exported to %s", filepath)
         return True
     except Exception as e:
-        logger.error(f"Export error: {e}")
+        logger.error("Export error: %s", e)
         return False
 
 def generate_recovery_message(patient_name, procedure):
